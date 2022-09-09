@@ -28,12 +28,14 @@ import java.util.UUID;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lightcouch.Attachment;
 import org.lightcouch.CouchDbClient;
 import org.lightcouch.Params;
 import org.lightcouch.Response;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class AttachmentsTest {
 
 	private static CouchDbClient dbClient;

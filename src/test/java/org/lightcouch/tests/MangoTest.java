@@ -23,9 +23,11 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lightcouch.CouchDbClient;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class MangoTest {
 
 	private static CouchDbClient dbClient;

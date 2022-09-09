@@ -29,6 +29,7 @@ import java.util.Vector;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lightcouch.CouchDbClient;
 import org.lightcouch.Document;
@@ -39,6 +40,7 @@ import org.lightcouch.ViewResult;
 
 import com.google.gson.JsonObject;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class ViewsTest {
 
 	private static CouchDbClient dbClient;

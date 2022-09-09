@@ -21,11 +21,13 @@ import static org.junit.Assert.assertNotNull;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lightcouch.CouchDbClient;
 import org.lightcouch.Params;
 import org.lightcouch.Response;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class UpdateHandlerTest {
 
 	private static CouchDbClient dbClient;

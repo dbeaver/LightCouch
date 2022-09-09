@@ -24,10 +24,12 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lightcouch.CouchDbClient;
 import org.lightcouch.DesignDocument;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class DesignDocumentsTest {
 
 	private static CouchDbClient dbClient;

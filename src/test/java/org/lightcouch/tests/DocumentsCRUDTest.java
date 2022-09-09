@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lightcouch.CouchDbClient;
 import org.lightcouch.DocumentConflictException;
@@ -39,6 +40,7 @@ import org.lightcouch.Response;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class DocumentsCRUDTest {
 
 	private static CouchDbClient dbClient;

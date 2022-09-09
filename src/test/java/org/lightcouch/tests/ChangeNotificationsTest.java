@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.lightcouch.Changes;
 import org.lightcouch.ChangesResult;
@@ -35,6 +36,7 @@ import org.lightcouch.Response;
 
 import com.google.gson.JsonObject;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class ChangeNotificationsTest {
 	
 	private static CouchDbClient dbClient;
