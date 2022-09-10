@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
@@ -27,12 +27,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.Changes;
-import org.lightcouch.ChangesResult;
 import org.lightcouch.ChangesResult.Row;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.CouchDbInfo;
-import org.lightcouch.Response;
 
 import com.google.gson.JsonObject;
 

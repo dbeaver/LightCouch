@@ -75,7 +75,7 @@ public class Changes {
 	Changes(CouchDbClientBase dbc) {
 		this.dbc = dbc;
 		this.gson = dbc.getGson();
-		this.uriBuilder = URIBuilder.buildUri(dbc.getDBUri()).path("_changes");
+		this.uriBuilder = dbc.getDBURIBuilder().pathSegment("_changes");
 	}
 
 	/**
@@ -152,7 +152,7 @@ public class Changes {
 	}
 	
 	public Changes includeDocs(boolean includeDocs) {
-		uriBuilder.query("include_docs", includeDocs);
+		uriBuilder.query(CouchConstants.PARAM_INCLUDE_DOCS, includeDocs);
 		return this;
 	}
 	

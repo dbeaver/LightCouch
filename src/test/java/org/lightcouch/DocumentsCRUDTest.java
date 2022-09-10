@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -31,11 +31,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.DocumentConflictException;
-import org.lightcouch.NoDocumentException;
-import org.lightcouch.Params;
-import org.lightcouch.Response;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

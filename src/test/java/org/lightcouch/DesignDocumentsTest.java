@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.Response;
-
-import com.google.gson.JsonObject;
 
 @Ignore("Not a unit test! Runs agains a live database")
-public class BulkDocumentTest {
+public class DesignDocumentsTest {
 
 	private static CouchDbClient dbClient;
 
@@ -48,29 +43,26 @@ public class BulkDocumentTest {
 	}
 
 	@Test
-	public void bulkModifyDocs() {
-		List<Object> newDocs = new ArrayList<Object>();
-		newDocs.add(new Foo());
-		newDocs.add(new JsonObject());
-
-		List<Response> responses = dbClient.bulk(newDocs, true);
-		
-		assertThat(responses.size(), is(2));
+	public void designDocSync() {
+		DesignDocument designDoc = dbClient.design().getFromDesk("example");
+		dbClient.design().synchronizeWithDb(designDoc);
 	}
-
+	
 	@Test
-	public void bulkDocsRetrieve() {
-		Response r1 = dbClient.save(new Foo());
-		Response r2 = dbClient.save(new Foo());
+	public void designDocCompare() {
+		DesignDocument designDoc1 = dbClient.design().getFromDesk("example");
+		dbClient.design().synchronizeWithDb(designDoc1);
 		
-		List<String> keys = Arrays.asList(new String[] { r1.getId(), r2.getId() });
+		DesignDocument designDoc11 = dbClient.design().getFromDb("_design/example");
 		
-		List<Foo> docs = dbClient.view("_all_docs")
-				.includeDocs(true)
-				.keys(keys)
-				.query(Foo.class);
-		
-		assertThat(docs.size(), is(2));
+		assertEquals(designDoc1, designDoc11);
 	}
-
+	
+	@Test
+	public void designDocs() {
+		List<DesignDocument> designDocs = dbClient.design().getAllFromDesk();
+		dbClient.syncDesignDocsWithDb();
+		
+		assertThat(designDocs.size(), not(0));
+	}
 }

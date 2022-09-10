@@ -14,51 +14,61 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.Params;
-import org.lightcouch.Response;
+
+import com.google.gson.JsonObject;
 
 @Ignore("Not a unit test! Runs agains a live database")
-public class UpdateHandlerTest {
+public class BulkDocumentTest {
 
 	private static CouchDbClient dbClient;
 
 	@BeforeClass
 	public static void setUpClass() {
 		dbClient = new CouchDbClient();
-		dbClient.syncDesignDocsWithDb();
 	}
 
 	@AfterClass
 	public static void tearDownClass() {
 		dbClient.shutdown();
 	}
-	
-	@Test
-	public void updateHandler_queryParams() {
-		final String oldValue = "foo";
-		final String newValue = "foo bar";
-		
-		Response response = dbClient.save(new Foo(null, oldValue));
 
-		Params params = new Params()
-					.addParam("field", "title")
-					.addParam("value", newValue);
-		String output = dbClient.invokeUpdateHandler("example/example_update", response.getId(), params);
+	@Test
+	public void bulkModifyDocs() {
+		List<Object> newDocs = new ArrayList<Object>();
+		newDocs.add(new Foo());
+		newDocs.add(new JsonObject());
+
+		List<Response> responses = dbClient.bulk(newDocs, true);
 		
-		// retrieve from db to verify
-		Foo foo = dbClient.find(Foo.class, response.getId());
-		
-		assertNotNull(output);
-		assertEquals(foo.getTitle(), newValue);
+		assertThat(responses.size(), is(2));
 	}
+
+	@Test
+	public void bulkDocsRetrieve() {
+		Response r1 = dbClient.save(new Foo());
+		Response r2 = dbClient.save(new Foo());
+		
+		List<String> keys = Arrays.asList(new String[] { r1.getId(), r2.getId() });
+		
+		List<Foo> docs = dbClient.view("_all_docs")
+				.includeDocs(true)
+				.keys(keys)
+				.query(Foo.class);
+		
+		assertThat(docs.size(), is(2));
+	}
+
 }

@@ -1,6 +1,4 @@
-package org.lightcouch.tests;
-
-import org.lightcouch.Document;
+package org.lightcouch;
 
 public class Bar extends Document {
 	private String bar;

@@ -23,7 +23,6 @@ import static org.lightcouch.CouchDbUtil.generateUUID;
 import static org.lightcouch.CouchDbUtil.getAsString;
 import static org.lightcouch.CouchDbUtil.getStream;
 import static org.lightcouch.CouchDbUtil.streamToString;
-import static org.lightcouch.URIBuilder.buildUri;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +33,7 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.codec.Charsets;
 import org.apache.commons.logging.Log;
@@ -66,6 +66,8 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Contains a client Public API implementation.
@@ -77,29 +79,27 @@ public abstract class CouchDbClientBase {
 
 	static final Log log = LogFactory.getLog(CouchDbClient.class);
 
+	private final CouchDbProperties props;
+	@Nullable
 	private URI baseURI;
+	@Nullable
 	private URI dbURI;
-	private Gson gson; 
+	private Gson gson;
 	private CouchDbContext context;
 	private CouchDbDesign design;
 	final HttpClient httpClient;
 	final HttpHost host;
-	
+
 	CouchDbClientBase() {
 		this(new CouchDbConfig());
 	}
 	
 	CouchDbClientBase(CouchDbConfig config) {
-		final CouchDbProperties props = config.getProperties();
+		props = config.getProperties();
 		this.httpClient = createHttpClient(props);
 		this.gson = initGson(new GsonBuilder());
 		this.host = new HttpHost(props.getHost(), props.getPort(), props.getProtocol());
-		
-		final String path = props.getPath() != null ? props.getPath() : "";
-        this.baseURI = buildUri().scheme(props.getProtocol()).host(props.getHost()).port(props.getPort()).path("/").path(path).build();
-		this.dbURI   = buildUri(baseURI).path(props.getDbName()).path("/").build();
-		
-		this.context = new CouchDbContext(this, props); 
+		this.context = new CouchDbContext(this, props);
 		this.design = new CouchDbDesign(this);
 	}
 	
@@ -180,10 +180,7 @@ public abstract class CouchDbClientBase {
 	 * @throws NoDocumentException If the document is not found in the database.
 	 */
 	public <T> T find(Class<T> classType, String id) {
-		assertNotEmpty(classType, "Class");
-		assertNotEmpty(id, "id");
-		final URI uri = buildUri(getDBUri()).pathEncoded(id).build();
-		return get(uri, classType);
+		return find(classType, id, Map.of());
 	}
 	
 	/**
@@ -195,10 +192,26 @@ public abstract class CouchDbClientBase {
 	 * @return An object of type T.
 	 * @throws NoDocumentException If the document is not found in the database.
 	 */
+	@Deprecated
 	public <T> T find(Class<T> classType, String id, Params params) {
+		return find(classType, id, params.getParamMap());
+	}
+
+	/**
+	 * Finds an Object of the specified type.
+	 *
+	 * @param <T> Object type.
+	 * @param classType The class of type T.
+	 * @param id The document id.
+	 * @param params Extra parameters to append.
+	 * @return An object of type T.
+	 * @throws NoDocumentException If the document is not found in the database.
+	 */
+	public <T> T find(Class<T> classType, String id, Map<String, ?> params) {
 		assertNotEmpty(classType, "Class");
 		assertNotEmpty(id, "id");
-		final URI uri = buildUri(getDBUri()).pathEncoded(id).query(params).build();
+
+		URI uri = getDBURIBuilder().pathSegment(id).query(params).build();
 		return get(uri, classType);
 	}
 	
@@ -214,8 +227,8 @@ public abstract class CouchDbClientBase {
 	public <T> T find(Class<T> classType, String id, String rev) {
 		assertNotEmpty(classType, "Class");
 		assertNotEmpty(id, "id");
-		assertNotEmpty(id, "rev");
-		final URI uri = buildUri(getDBUri()).pathEncoded(id).query("rev", rev).build();
+		assertNotEmpty(rev, CouchConstants.PARAM_REVISION);
+		URI uri = getDBURIBuilder().pathSegment(id).query(CouchConstants.PARAM_REVISION, rev).build();
 		return get(uri, classType);
 	}
 	
@@ -243,7 +256,7 @@ public abstract class CouchDbClientBase {
 	 */
 	public InputStream find(String id) {
 		assertNotEmpty(id, "id");
-		return get(buildUri(getDBUri()).path(id).build());
+		return get(getDBURIBuilder().pathSegment(id).build());
 	}
 	
 	/**
@@ -256,8 +269,8 @@ public abstract class CouchDbClientBase {
 	 */
 	public InputStream find(String id, String rev) {
 		assertNotEmpty(id, "id");
-		assertNotEmpty(rev, "rev");
-		final URI uri = buildUri(getDBUri()).path(id).query("rev", rev).build();
+		assertNotEmpty(rev, CouchConstants.PARAM_REVISION);
+		final URI uri = getDBURIBuilder().pathSegment(id).query(CouchConstants.PARAM_REVISION, rev).build();
 		return get(uri);
 	}
 	
@@ -273,8 +286,8 @@ public abstract class CouchDbClientBase {
 		assertNotEmpty(jsonQuery, "jsonQuery");
 		HttpResponse response = null;
 		try {
-			response = post(buildUri(getDBUri()).path("_find").build(), jsonQuery);
-			Reader reader = new InputStreamReader(getStream(response), Charsets.UTF_8);
+			response = post(getDBURIBuilder().pathSegment("_find").build(), jsonQuery);
+			Reader reader = new InputStreamReader(getStream(response), Charsets.UTF_8); // FIXME close this reader
 			JsonArray jsonArray = new JsonParser().parse(reader)
 					.getAsJsonObject().getAsJsonArray("docs");
 			List<T> list = new ArrayList<T>();
@@ -298,7 +311,7 @@ public abstract class CouchDbClientBase {
 		assertNotEmpty(id, "id");
 		HttpResponse response = null;
 		try {
-			response = head(buildUri(getDBUri()).pathEncoded(id).build());
+			response = head(getDBURIBuilder().pathSegment(id).build());
 		} catch (NoDocumentException e) {
 			return false;
 		} finally {
@@ -315,7 +328,7 @@ public abstract class CouchDbClientBase {
 	 * @return {@link Response}
 	 */
 	public Response save(Object object) {
-		return put(getDBUri(), object, true);
+		return put(getDBURIBuilder(), object, true);
 	}
 	
 	/**
@@ -327,9 +340,8 @@ public abstract class CouchDbClientBase {
 	public Response post(Object object) {
 		assertNotEmpty(object, "object");
 		HttpResponse response = null;
-		try { 
-			URI uri = buildUri(getDBUri()).build();
-			response = post(uri, getGson().toJson(object));
+		try {
+			response = post(getDBUri(), gson.toJson(object));
 			return getResponse(response);
 		} finally {
 			close(response);
@@ -344,7 +356,7 @@ public abstract class CouchDbClientBase {
 		assertNotEmpty(object, "object");
 		HttpResponse response = null;
 		try { 
-			URI uri = buildUri(getDBUri()).query("batch", "ok").build();
+			URI uri = getDBURIBuilder().query("batch", "ok").build();
 			response = post(uri, getGson().toJson(object));
 		} finally {
 			close(response);
@@ -358,7 +370,7 @@ public abstract class CouchDbClientBase {
 	 * @return {@link Response}
 	 */
 	public Response update(Object object) {
-		return put(getDBUri(), object, false);
+		return put(getDBURIBuilder(), object, false);
 	}
 	
 	/**
@@ -385,8 +397,8 @@ public abstract class CouchDbClientBase {
 	 */
 	public Response remove(String id, String rev) {
 		assertNotEmpty(id, "id");
-		assertNotEmpty(rev, "rev");
-		final URI uri = buildUri(getDBUri()).pathEncoded(id).query("rev", rev).build();
+		assertNotEmpty(rev, CouchConstants.PARAM_REVISION);
+		URI uri = getDBURIBuilder().pathSegment(id).query(CouchConstants.PARAM_REVISION, rev).build();
 		return delete(uri);
 	}
 	
@@ -402,7 +414,7 @@ public abstract class CouchDbClientBase {
 		try { 
 			final String newEditsVal = newEdits ? "\"new_edits\": true, " : "\"new_edits\": false, ";
 			final String json = String.format("{%s%s%s}", newEditsVal, "\"docs\": ", getGson().toJson(objects));
-			final URI uri = buildUri(getDBUri()).path("_bulk_docs").build();
+			final URI uri = getDBURIBuilder().pathSegment("_bulk_docs").build();
 			response = post(uri, json);
 			return getResponseList(response);
 		} finally {
@@ -422,7 +434,10 @@ public abstract class CouchDbClientBase {
 		assertNotEmpty(in, "in");
 		assertNotEmpty(name, "name");
 		assertNotEmpty(contentType, "ContentType");
-		final URI uri = buildUri(getDBUri()).path(generateUUID()).path("/").path(name).build();
+		URI uri = getDBURIBuilder()
+			.pathSegment(generateUUID())
+			.pathSegment(name)
+			.build();
 		return put(uri, in, contentType);
 	}
 	
@@ -442,7 +457,11 @@ public abstract class CouchDbClientBase {
 		assertNotEmpty(name, "name");
 		assertNotEmpty(contentType, "ContentType");
 		assertNotEmpty(docId, "docId");
-		final URI uri = buildUri(getDBUri()).pathEncoded(docId).path("/").path(name).query("rev", docRev).build();
+		URI uri = getDBURIBuilder()
+			.pathSegment(docId)
+			.pathSegment(name)
+			.query(CouchConstants.PARAM_REVISION, docRev)
+			.build();
 		return put(uri, in, contentType);
 	}
 	
@@ -459,12 +478,36 @@ public abstract class CouchDbClientBase {
 	 * @param params The query parameters as {@link Params}.
 	 * @return The output of the request.
 	 */
+	@Deprecated
 	public String invokeUpdateHandler(String updateHandlerUri, String docId, Params params) {
+		return invokeUpdateHandler(updateHandlerUri, docId, params.getParamMap());
+	}
+
+	/**
+	 * Invokes an Update Handler.
+	 * <pre>
+	 * Params params = new Params()
+	 *	.addParam("field", "foo")
+	 *	.addParam("value", "bar");
+	 * String output = dbClient.invokeUpdateHandler("designDoc/update1", "docId", params);
+	 * </pre>
+	 * @param updateHandlerUri The Update Handler URI, in the format: <code>designDoc/update1</code>
+	 * @param docId The document id to update.
+	 * @param params The query parameters as {@link Params}.
+	 * @return The output of the request.
+	 */
+	public String invokeUpdateHandler(String updateHandlerUri, String docId, Map<String, ?> params) {
 		assertNotEmpty(updateHandlerUri, "uri");
 		assertNotEmpty(docId, "docId");
 		final String[] v = updateHandlerUri.split("/");
-		final String path = String.format("_design/%s/_update/%s/", v[0], v[1]);
-		final URI uri = buildUri(getDBUri()).path(path).path(docId).query(params).build();
+		URI uri = getDBURIBuilder()
+			.pathSegment("_design")
+			.pathSegment(v[0])
+			.pathSegment("_update")
+			.pathSegment(v[1])
+			.pathSegment(docId)
+			.query(params)
+			.build();
 		final HttpResponse response = executeRequest(new HttpPut(uri));
 		return streamToString(getStream(response));
 	}
@@ -503,17 +546,40 @@ public abstract class CouchDbClientBase {
 	/**
 	 * @return The base URI.
 	 */
+	@NotNull
 	public URI getBaseUri() {
+		if (baseURI == null) {
+			baseURI = getBaseURIBuilder().build();
+		}
 		return baseURI;
+	}
+
+	URIBuilder getBaseURIBuilder() {
+		URIBuilder builder = new URIBuilder()
+			.scheme(props.getProtocol())
+			.host(props.getHost())
+			.port(props.getPort());
+		if (props.getPath() != null) {
+			builder.pathSegment(props.getPath());
+		}
+		return builder;
 	}
 	
 	/**
 	 * @return The database URI.
 	 */
+	@NotNull
 	public URI getDBUri() {
+		if (dbURI == null) {
+			dbURI = getDBURIBuilder().build();
+		}
 		return dbURI;
 	}
-    
+
+	URIBuilder getDBURIBuilder() {
+		return getBaseURIBuilder().pathSegment(props.getDbName());
+	}
+
 	/**
 	 * @return The Gson instance.
 	 */
@@ -570,7 +636,7 @@ public abstract class CouchDbClientBase {
 	 * Performs a HTTP PUT request, saves or updates a document.
 	 * @return {@link Response}
 	 */
-	Response put(URI uri, Object object, boolean newEntity) {
+	Response put(URIBuilder uriBuilder, Object object, boolean newEntity) {
 		assertNotEmpty(object, "object");
 		HttpResponse response = null;
 		try {  
@@ -578,13 +644,13 @@ public abstract class CouchDbClientBase {
 			String id = getAsString(json, "_id");
 			String rev = getAsString(json, "_rev");
 			if(newEntity) { // save
-				assertNull(rev, "rev");
+				assertNull(rev, CouchConstants.PARAM_REVISION);
 				id = (id == null) ? generateUUID() : id;
 			} else { // update
 				assertNotEmpty(id, "id");
-				assertNotEmpty(rev, "rev");
+				assertNotEmpty(rev, CouchConstants.PARAM_REVISION);
 			}
-			final HttpPut put = new HttpPut(buildUri(uri).pathEncoded(id).build());
+			HttpPut put = new HttpPut(uriBuilder.pathSegment(id).build());
 			setEntity(put, json.toString());
 			response = executeRequest(put); 
 			return getResponse(response);

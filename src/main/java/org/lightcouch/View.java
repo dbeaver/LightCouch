@@ -111,7 +111,7 @@ public class View {
 			String[] v = viewId.split("/");
 			view = String.format("_design/%s/_view/%s", v[0], v[1]);
 		}
-		this.uriBuilder = URIBuilder.buildUri(dbc.getDBUri()).path(view);
+		this.uriBuilder = dbc.getDBURIBuilder().pathSegment(view);
 	}
 	
 	// Query options
@@ -535,7 +535,7 @@ public class View {
 	 */
 	public View includeDocs(Boolean includeDocs) {
 		this.includeDocs = includeDocs;
-		uriBuilder.query("include_docs", this.includeDocs);
+		uriBuilder.query(CouchConstants.PARAM_INCLUDE_DOCS, this.includeDocs);
 		return this;
 	}
 	

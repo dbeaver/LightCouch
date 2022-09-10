@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 
@@ -26,11 +27,9 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.DesignDocument;
 
 @Ignore("Not a unit test! Runs agains a live database")
-public class DesignDocumentsTest {
+public class DBServerTest {
 
 	private static CouchDbClient dbClient;
 
@@ -45,27 +44,36 @@ public class DesignDocumentsTest {
 	}
 
 	@Test
-	public void designDocSync() {
-		DesignDocument designDoc = dbClient.design().getFromDesk("example");
-		dbClient.design().synchronizeWithDb(designDoc);
-	}
-	
-	@Test
-	public void designDocCompare() {
-		DesignDocument designDoc1 = dbClient.design().getFromDesk("example");
-		dbClient.design().synchronizeWithDb(designDoc1);
-		
-		DesignDocument designDoc11 = dbClient.design().getFromDb("_design/example");
-		
-		assertEquals(designDoc1, designDoc11);
-	}
-	
-	@Test
-	public void designDocs() {
-		List<DesignDocument> designDocs = dbClient.design().getAllFromDesk();
-		dbClient.syncDesignDocsWithDb();
-		
-		assertThat(designDocs.size(), not(0));
+	public void dbInfo() {
+		CouchDbInfo dbInfo = dbClient.context().info();
+		assertNotNull(dbInfo);
 	}
 
+	@Test
+	public void serverVersion() {
+		String version = dbClient.context().serverVersion();
+		assertNotNull(version);
+	}
+
+	@Test
+	public void compactDb() {
+		dbClient.context().compact();
+	}
+
+	@Test
+	public void allDBs() {
+		List<String> allDbs = dbClient.context().getAllDbs();
+		assertThat(allDbs.size(), is(not(0)));
+	}
+
+	@Test
+	public void ensureFullCommit() {
+		dbClient.context().ensureFullCommit();
+	}
+
+	@Test
+	public void uuids() {
+		List<String> uuids = dbClient.context().uuids(10);
+		assertThat(uuids.size(), is(10));
+	}
 }

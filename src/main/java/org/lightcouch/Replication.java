@@ -19,7 +19,6 @@ package org.lightcouch;
 import static org.lightcouch.CouchDbUtil.assertNotEmpty;
 import static org.lightcouch.CouchDbUtil.close;
 import static org.lightcouch.CouchDbUtil.getStream;
-import static org.lightcouch.URIBuilder.buildUri;
 
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -100,7 +99,7 @@ public class Replication {
 			if(log.isDebugEnabled()) {
 				log.debug(json);
 			}
-			final URI uri = buildUri(dbc.getBaseUri()).path("_replicate").build();
+			URI uri = dbc.getBaseURIBuilder().pathSegment("_replicate").build();
 			response = dbc.post(uri, json.toString());
 			final InputStreamReader reader = new InputStreamReader(getStream(response), Charsets.UTF_8);
 			return dbc.getGson().fromJson(reader, ReplicationResult.class);
