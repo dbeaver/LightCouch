@@ -16,10 +16,11 @@
 
 package org.lightcouch;
 
-import java.io.UnsupportedEncodingException;
+import org.jetbrains.annotations.Nullable;
+
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 /**
  * Query parameters to append to find requests.
@@ -30,54 +31,60 @@ import java.util.List;
  * @see CouchDbClientBase#find(Class, String, Params)
  * @since 0.0.6
  * @author Ahmed Yehia
- * 
+ *
  */
+@Deprecated
 public class Params {
+    private final Map<String, String> paramMap = new LinkedHashMap<>();
 
-	private List<String> params = new ArrayList<String>();
+    public Params revsInfo() {
+        return addTrueFlag("revs_info");
+    }
 
-	public Params revsInfo() {
-		params.add("revs_info=true");
-		return this;
-	}
+    public Params attachments() {
+        return addTrueFlag("attachments");
+    }
 
-	public Params attachments() {
-		params.add("attachments=true");
-		return this;
-	}
+    public Params revisions() {
+        return addTrueFlag("revs");
+    }
 
-	public Params revisions() {
-		params.add("revs=true");
-		return this;
-	}
+    public Params rev(String rev) {
+        return addParam(CouchConstants.PARAM_REVISION, rev);
+    }
 
-	public Params rev(String rev) {
-		params.add(String.format("rev=%s", rev));
-		return this;
-	}
+    public Params conflicts() {
+        return addTrueFlag("conflicts");
+    }
 
-	public Params conflicts() {
-		params.add("conflicts=true");
-		return this;
-	}
+    public Params localSeq() {
+        return addTrueFlag("local_seq");
+    }
 
-	public Params localSeq() {
-		params.add("local_seq=true");
-		return this;
-	}
+    private Params addTrueFlag(String paramName) {
+        return addParam(paramName, "true");
+    }
 
-	public Params addParam(String name, String value) {
-		try {
-			name = URLEncoder.encode(name, "UTF-8");
-			value = URLEncoder.encode(value, "UTF-8");
-			params.add(String.format("%s=%s", name, value));
-		} catch (UnsupportedEncodingException e) {
-			throw new IllegalArgumentException(e);
-		}
-		return this;
-	}
+    public Params addParam(String name, String value) {
+        paramMap.put(name, value);
+        return this;
+    }
 
-	public List<String> getParams() {
-		return params.isEmpty() ? null : params;
-	}
+    @Nullable
+    public List<String> getParams() {
+        if (paramMap.isEmpty()) {
+            return null;
+        }
+        List<String> list = new ArrayList<>();
+        for (var entry : paramMap.entrySet()) {
+            String encodedName = URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8);
+            String encodedValue = URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8);
+            list.add(encodedName + '=' + encodedValue);
+        }
+        return list;
+    }
+
+    Map<String, String> getParamMap() {
+        return Collections.unmodifiableMap(paramMap);
+    }
 }

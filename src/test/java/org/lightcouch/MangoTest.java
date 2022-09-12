@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.CouchDbInfo;
 
-public class DBServerTest {
+@Ignore("Not a unit test! Runs agains a live database")
+public class MangoTest {
 
 	private static CouchDbClient dbClient;
 
@@ -44,36 +42,13 @@ public class DBServerTest {
 	}
 
 	@Test
-	public void dbInfo() {
-		CouchDbInfo dbInfo = dbClient.context().info();
-		assertNotNull(dbInfo);
-	}
-
-	@Test
-	public void serverVersion() {
-		String version = dbClient.context().serverVersion();
-		assertNotNull(version);
-	}
-
-	@Test
-	public void compactDb() {
-		dbClient.context().compact();
-	}
-
-	@Test
-	public void allDBs() {
-		List<String> allDbs = dbClient.context().getAllDbs();
-		assertThat(allDbs.size(), is(not(0)));
-	}
-
-	@Test
-	public void ensureFullCommit() {
-		dbClient.context().ensureFullCommit();
-	}
-
-	@Test
-	public void uuids() {
-		List<String> uuids = dbClient.context().uuids(10);
-		assertThat(uuids.size(), is(10));
+	public void findDocs() {
+		dbClient.save(new Foo());
+		
+		String jsonQuery = "{ \"selector\": { \"_id\": { \"$gt\": null } }, \"limit\":2 }";
+		
+		List<Foo> docs = dbClient.findDocs(jsonQuery, Foo.class);
+		
+		assertThat(docs.size(), not(0));
 	}
 }

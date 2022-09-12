@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -25,12 +25,12 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.Response;
 
 import com.google.gson.JsonObject;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class BulkDocumentTest {
 
 	private static CouchDbClient dbClient;

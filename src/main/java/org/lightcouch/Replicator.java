@@ -17,7 +17,6 @@
 package org.lightcouch;
 
 import static org.lightcouch.CouchDbUtil.*;
-import static org.lightcouch.URIBuilder.buildUri;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -80,16 +79,17 @@ public class Replicator {
 
 	private CouchDbClientBase dbc;
 	private ReplicatorDocument replicatorDoc;
-	private URI dbURI;
 			
 	public Replicator(CouchDbClientBase dbc) {
 		this.dbc = dbc;
 		replicatorDoc = new ReplicatorDocument();
 		replicatorDB = "_replicator"; // default replicator db
 		userCtxRoles = new String[0]; // default roles
-		dbURI = buildUri(dbc.getBaseUri()).path(replicatorDB).path("/").build();
 	}
 
+	private URIBuilder getURIBuilder() {
+		return dbc.getBaseURIBuilder().pathSegment(replicatorDB);
+	}
 	
 	/**
 	 * Adds a new document to the replicator database. 
@@ -104,7 +104,7 @@ public class Replicator {
 			ctx.setRoles(userCtxRoles);
 			replicatorDoc.setUserCtx(ctx);
 		}
-		return dbc.put(dbURI, replicatorDoc, true);
+		return dbc.put(getURIBuilder(), replicatorDoc, true);
 	}
 	
 	/**
@@ -113,7 +113,10 @@ public class Replicator {
 	 */
 	public ReplicatorDocument find() {
 		assertNotEmpty(replicatorDoc.getId(), "Doc id");
-		final URI uri = buildUri(dbURI).path(replicatorDoc.getId()).query("rev", replicatorDoc.getRevision()).build();
+		URI uri = getURIBuilder()
+			.pathSegment(replicatorDoc.getId())
+			.query(CouchConstants.PARAM_REVISION, replicatorDoc.getRevision())
+			.build();
 		return dbc.get(uri, ReplicatorDocument.class);
 	}
 	
@@ -123,8 +126,8 @@ public class Replicator {
 	 */
 	public List<ReplicatorDocument> findAll() {
 		InputStream instream = null;
-		try {  
-			final URI uri = buildUri(dbURI).path("_all_docs").query("include_docs", "true").build();
+		try {
+			URI uri = getURIBuilder().pathSegment("_all_docs").query(CouchConstants.PARAM_INCLUDE_DOCS, true).build();
 			final Reader reader = new InputStreamReader(instream = dbc.get(uri), Charsets.UTF_8);
 			final JsonArray jsonArray = new JsonParser().parse(reader)
 					.getAsJsonObject().getAsJsonArray("rows");
@@ -149,7 +152,10 @@ public class Replicator {
 	public Response remove() {
 		assertNotEmpty(replicatorDoc.getId(), "Doc id");
 		assertNotEmpty(replicatorDoc.getRevision(), "Doc rev");
-		final URI uri = buildUri(dbURI).path(replicatorDoc.getId()).query("rev", replicatorDoc.getRevision()).build();
+		URI uri = getURIBuilder()
+			.pathSegment(replicatorDoc.getId())
+			.query(CouchConstants.PARAM_REVISION, replicatorDoc.getRevision())
+			.build();
 		return dbc.delete(uri);
 	} 
 	
@@ -202,7 +208,6 @@ public class Replicator {
 
 	public Replicator replicatorDB(String replicatorDB) {
 		this.replicatorDB = replicatorDB;
-		dbURI = buildUri(dbc.getBaseUri()).path(replicatorDB).path("/").build();
 		return this;
 	}
 

@@ -21,7 +21,6 @@ import static org.lightcouch.CouchDbUtil.assertNotEmpty;
 import static org.lightcouch.CouchDbUtil.listResources;
 import static org.lightcouch.CouchDbUtil.readFile;
 import static org.lightcouch.CouchDbUtil.removeExtension;
-import static org.lightcouch.URIBuilder.buildUri;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -122,7 +121,7 @@ public class CouchDbDesign {
 	 */
 	public DesignDocument getFromDb(String id) {
 		assertNotEmpty(id, "id");
-		final URI uri = buildUri(dbc.getDBUri()).path(id).build();
+		URI uri = dbc.getDBURIBuilder().pathSegment(id).build();
 		return dbc.get(uri, DesignDocument.class);
 	}
 	
@@ -134,8 +133,8 @@ public class CouchDbDesign {
 	 */
 	public DesignDocument getFromDb(String id, String rev) {
 		assertNotEmpty(id, "id");
-		assertNotEmpty(id, "rev");
-		final URI uri = buildUri(dbc.getDBUri()).path(id).query("rev", rev).build();
+		assertNotEmpty(id, CouchConstants.PARAM_REVISION);
+		URI uri = dbc.getDBURIBuilder().pathSegment(id).query(CouchConstants.PARAM_REVISION, rev).build();
 		return dbc.get(uri, DesignDocument.class);
 	}
 	

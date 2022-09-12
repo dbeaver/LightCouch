@@ -16,35 +16,34 @@
 
 package org.lightcouch;
 
-import java.io.UnsupportedEncodingException;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Helper class for construction of HTTP request URIs.
  * @since 0.0.2
  * @author Ahmed Yehia
- * 
+ *
  */
 class URIBuilder {
+	@Nullable
 	private String scheme;
+	@Nullable
 	private String host;
-	private int port;
-	private String path = "";
-	private final List<String> params = new ArrayList<String>();
-
-	public static URIBuilder buildUri() {
-		return new URIBuilder();
-	}
-
-	public static URIBuilder buildUri(URI uri) {
-		URIBuilder builder = URIBuilder.buildUri().scheme(uri.getScheme()).
-				host(uri.getHost()).port(uri.getPort()).path(uri.getPath());
-		return builder;
-	}
+	@Nullable
+	private Integer port;
+	@Nullable
+	private Collection<String> pathSegments;
+	@Nullable
+	private Map<String, Object> queryParams;
 
 	public URIBuilder scheme(String scheme) {
 		this.scheme = scheme;
@@ -60,57 +59,84 @@ class URIBuilder {
 		this.port = port;
 		return this;
 	}
-	
-	public URIBuilder path(String path) {
-		this.path += path;
-		return this;
-	}
 
-	public URIBuilder pathEncoded(String path) {
-		try {
-			this.path += URLEncoder.encode(path, "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new IllegalArgumentException(e);
+	URIBuilder pathSegment(String pathSegment) {
+		if (pathSegments == null) {
+			pathSegments = new ArrayList<>();
 		}
+		pathSegments.add(pathSegment);
 		return this;
 	}
 
 	public URIBuilder query(String name, Object value) {
-		if (name != null && value != null) {
-			try {
-				name = URLEncoder.encode(name, "UTF-8");
-				value = URLEncoder.encode(String.valueOf(value), "UTF-8");
-				this.params.add(String.format("%s=%s", name, value));
-			} catch (UnsupportedEncodingException e) {
-				throw new IllegalArgumentException(e);
-			}
-		}
+		safeQueryParams().put(name, value);
 		return this;
 	}
 
-	public URIBuilder query(Params params) {
-		if (params.getParams() != null)
-			this.params.addAll(params.getParams());
+	URIBuilder query(Map<String, ?> params) {
+		safeQueryParams().putAll(params);
 		return this;
+	}
+
+	@NotNull
+	private Map<String, Object> safeQueryParams() {
+		if (queryParams == null) {
+			queryParams = new LinkedHashMap<>();
+		}
+		return queryParams;
 	}
 
 	public URI build() {
-		final StringBuilder query = new StringBuilder();
-		
-		for (int i = 0; i < params.size(); i++) {
-			String amp = (i != params.size() - 1) ? "&" : "";
-			query.append(params.get(i) + amp);
+		assert scheme != null; // mandated by RFC 3986
+
+		StringBuilder builder = new StringBuilder(scheme);
+		builder.append(':');
+		if (host != null || port != null) {
+			builder.append("//");
 		}
-		
-		String q = (query.length() == 0) ? "" : "?" + query;
-		String uri = String.format("%s://%s:%s%s%s", new Object[] { scheme, host, port, path, q });
-		
-		try {
-			return new URI(uri);
-		} catch (URISyntaxException e) {
-			throw new IllegalArgumentException(e);
+		if (host != null) {
+			builder.append(host);
+		}
+		if (port != null) {
+			builder.append(':').append(port);
+		}
+		if (pathSegments != null) {
+			String path = URLEncodedUtils.formatSegments(pathSegments, StandardCharsets.UTF_8);
+			builder.append(path);
+		}
+		if (queryParams != null) {
+			builder.append('?');
+			Iterable<NameValuePair> nameValuePairs = queryParams.entrySet().stream()
+				.map(entry -> new QueryParameter(entry.getKey(), String.valueOf(entry.getValue())))
+				.collect(Collectors.toList());
+			String query = URLEncodedUtils.format(nameValuePairs, StandardCharsets.UTF_8);
+			builder.append(query);
 		}
 
+		try {
+			return new URI(builder.toString());
+		} catch (URISyntaxException e) {
+			throw new IllegalStateException(e);
+		}
 	}
 
+	private static final class QueryParameter implements NameValuePair {
+		private final String name;
+		private final String value;
+
+		private QueryParameter(String name, String value) {
+			this.name = name;
+			this.value = value;
+		}
+
+		@Override
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public String getValue() {
+			return value;
+		}
+	}
 }

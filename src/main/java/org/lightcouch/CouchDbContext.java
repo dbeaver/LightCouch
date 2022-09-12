@@ -17,7 +17,6 @@
 package org.lightcouch;
 
 import static org.lightcouch.CouchDbUtil.*;
-import static org.lightcouch.URIBuilder.*;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -44,8 +43,7 @@ import com.google.gson.reflect.TypeToken;
  * @author Ahmed Yehia
  */
 public class CouchDbContext {
-
-	private static final Log log = LogFactory.getLog(CouchDbClient.class);
+	private static final Log log = LogFactory.getLog(CouchDbContext.class);
 
 	private CouchDbClientBase dbc;
 
@@ -67,7 +65,7 @@ public class CouchDbContext {
 		assertNotEmpty(dbName, "dbName");
 		if(!"delete database".equals(confirm))
 			throw new IllegalArgumentException("Invalid confirm!");
-		dbc.delete(buildUri(dbc.getBaseUri()).path(dbName).build());
+		dbc.delete(dbc.getBaseURIBuilder().pathSegment(dbName).build());
 	}
 
 	/**
@@ -78,7 +76,7 @@ public class CouchDbContext {
 		assertNotEmpty(dbName, "dbName");
 		InputStream getresp = null;
 		HttpResponse putresp = null;
-		final URI uri = buildUri(dbc.getBaseUri()).path(dbName).build();
+		URI uri = dbc.getBaseURIBuilder().pathSegment(dbName).build();
 		try {
 			getresp = dbc.get(uri);
 		} catch (NoDocumentException e) { // db doesn't exist
@@ -98,8 +96,8 @@ public class CouchDbContext {
 		InputStream instream = null;
 		try {
 			Type typeOfList = new TypeToken<List<String>>() {}.getType();
-			instream = dbc.get(buildUri(dbc.getBaseUri()).path("_all_dbs").build());
-			Reader reader = new InputStreamReader(instream, Charsets.UTF_8);
+			instream = dbc.get(dbc.getBaseURIBuilder().pathSegment("_all_dbs").build());
+			Reader reader = new InputStreamReader(instream, Charsets.UTF_8); // FIXME close this reader
 			return dbc.getGson().fromJson(reader, typeOfList);
 		} finally {
 			close(instream);
@@ -110,7 +108,7 @@ public class CouchDbContext {
 	 * @return {@link CouchDbInfo} Containing the DB server info.
 	 */
 	public CouchDbInfo info() {
-		return dbc.get(buildUri(dbc.getDBUri()).build(), CouchDbInfo.class);
+		return dbc.get(dbc.getDBUri(), CouchDbInfo.class);
 	}
 
 	/**
@@ -119,8 +117,8 @@ public class CouchDbContext {
 	public String serverVersion() {
 		InputStream instream = null;
 		try {
-			instream = dbc.get(buildUri(dbc.getBaseUri()).build());
-			Reader reader = new InputStreamReader(instream, Charsets.UTF_8);
+			instream = dbc.get(dbc.getBaseUri());
+			Reader reader = new InputStreamReader(instream, Charsets.UTF_8); // FIXME close this reader
 			return getAsString(new JsonParser().parse(reader).getAsJsonObject(), "version");
 		} finally {
 			close(instream);
@@ -133,7 +131,7 @@ public class CouchDbContext {
 	public void compact() {
 		HttpResponse response = null;
 		try {
-			response = dbc.post(buildUri(dbc.getDBUri()).path("_compact").build(), "");
+			response = dbc.post(dbc.getDBURIBuilder().pathSegment("_compact").build(), "");
 		} finally {
 			close(response);
 		}
@@ -145,7 +143,7 @@ public class CouchDbContext {
 	public void ensureFullCommit() {
 		HttpResponse response = null;
 		try {
-			response = dbc.post(buildUri(dbc.getDBUri()).path("_ensure_full_commit").build(), "");
+			response = dbc.post(dbc.getDBURIBuilder().pathSegment("_ensure_full_commit").build(), "");
 		} finally {
 			close(response);
 		}

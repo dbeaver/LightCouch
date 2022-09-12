@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,8 +23,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.CouchDbProperties;
 
 /**
  * {@link CouchDbClient} load test.
@@ -125,6 +123,4 @@ public class CouchDbClientLoadTest {
 			return value;
 		}
 	}
-
 }
-

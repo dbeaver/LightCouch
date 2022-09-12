@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -24,10 +24,10 @@ import java.util.List;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.DesignDocument;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class DesignDocumentsTest {
 
 	private static CouchDbClient dbClient;
@@ -65,5 +65,4 @@ public class DesignDocumentsTest {
 		
 		assertThat(designDocs.size(), not(0));
 	}
-
 }

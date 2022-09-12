@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -29,11 +29,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.ReplicationResult;
-import org.lightcouch.ReplicatorDocument;
-import org.lightcouch.Response;
-import org.lightcouch.ViewResult;
 import org.lightcouch.ReplicationResult.ReplicationHistory;
 
 @Ignore

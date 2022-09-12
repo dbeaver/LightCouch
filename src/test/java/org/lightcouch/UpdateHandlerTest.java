@@ -14,40 +14,48 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertThat;
-
-import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
 
-public class MangoTest {
+@Ignore("Not a unit test! Runs agains a live database")
+public class UpdateHandlerTest {
 
 	private static CouchDbClient dbClient;
 
 	@BeforeClass
 	public static void setUpClass() {
 		dbClient = new CouchDbClient();
+		dbClient.syncDesignDocsWithDb();
 	}
 
 	@AfterClass
 	public static void tearDownClass() {
 		dbClient.shutdown();
 	}
-
+	
 	@Test
-	public void findDocs() {
-		dbClient.save(new Foo());
+	public void updateHandler_queryParams() {
+		final String oldValue = "foo";
+		final String newValue = "foo bar";
 		
-		String jsonQuery = "{ \"selector\": { \"_id\": { \"$gt\": null } }, \"limit\":2 }";
+		Response response = dbClient.save(new Foo(null, oldValue));
+
+		Params params = new Params()
+					.addParam("field", "title")
+					.addParam("value", newValue);
+		String output = dbClient.invokeUpdateHandler("example/example_update", response.getId(), params);
 		
-		List<Foo> docs = dbClient.findDocs(jsonQuery, Foo.class);
+		// retrieve from db to verify
+		Foo foo = dbClient.find(Foo.class, response.getId());
 		
-		assertThat(docs.size(), not(0));
+		assertNotNull(output);
+		assertEquals(foo.getTitle(), newValue);
 	}
 }

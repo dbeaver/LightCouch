@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.lightcouch.tests;
+package org.lightcouch;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -29,16 +29,12 @@ import java.util.Vector;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.lightcouch.CouchDbClient;
-import org.lightcouch.Document;
-import org.lightcouch.DocumentConflictException;
-import org.lightcouch.NoDocumentException;
-import org.lightcouch.Page;
-import org.lightcouch.ViewResult;
 
 import com.google.gson.JsonObject;
 
+@Ignore("Not a unit test! Runs agains a live database")
 public class ViewsTest {
 
 	private static CouchDbClient dbClient;
