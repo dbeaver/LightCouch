@@ -762,7 +762,8 @@ public abstract class CouchDbClientBase {
 	 * @return {@link Gson} instance
 	 */
 	private Gson initGson(GsonBuilder gsonBuilder) {
-		gsonBuilder.registerTypeAdapter(JsonObject.class, new JsonDeserializer<JsonObject>() {
+		// Fix of https://github.com/lightcouch/LightCouch/issues/82
+/*		gsonBuilder.registerTypeAdapter(JsonObject.class, new JsonDeserializer<JsonObject>() {
 			public JsonObject deserialize(JsonElement json,
 					Type typeOfT, JsonDeserializationContext context)
 					throws JsonParseException {
@@ -775,7 +776,7 @@ public abstract class CouchDbClientBase {
 				return src.getAsJsonObject();
 			}
 			
-		});
+		});*/
 		return gsonBuilder.create();
 	}
 }
